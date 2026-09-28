@@ -53,7 +53,7 @@ public partial class App : Application
             var gesture = HotkeyGesture.Parse(settings.Hotkey);
             _detector = TextDetector.Create();
             _definitions = new DefinitionService(settings);
-            _pronouncer = new Pronouncer();
+            _pronouncer = new Pronouncer(settings.Voice);
             _hotkey = new GlobalHotkey(gesture);
             _hotkey.Pressed += OnHotkey;
             CreateTray(gesture);

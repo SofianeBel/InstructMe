@@ -56,6 +56,7 @@ public partial class OverlayWindow : Window
         BlurredImage.Stretch = Stretch.Fill;
         GlassBackdrop.Clip = Geometry.Empty;
         SpeakButton.IsEnabled = pronouncer.IsAvailable;
+        SpeakSentenceButton.IsEnabled = pronouncer.IsAvailable;
 
         SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
@@ -144,6 +145,8 @@ public partial class OverlayWindow : Window
         {
             case Key.Escape: Close(); break;
             case Key.Enter or Key.Space: OpenCard(); break;
+            case Key.P when shift: SpeakSentence(); break;
+            case Key.P: SpeakWord(); break;
             case Key.Right when shift: ExtendSelection(); break;
             case Key.Left when shift: ShrinkSelection(); break;
             case Key.Up: Navigate(NavDirection.Up); break;
@@ -163,6 +166,8 @@ public partial class OverlayWindow : Window
             case GamepadAction.Confirm: OpenCard(); break;
             case GamepadAction.Extend: ExtendSelection(); break;
             case GamepadAction.Shrink: ShrinkSelection(); break;
+            case GamepadAction.SpeakWord: SpeakWord(); break;
+            case GamepadAction.SpeakSentence: SpeakSentence(); break;
             case GamepadAction.Up: Navigate(NavDirection.Up); break;
             case GamepadAction.Down: Navigate(NavDirection.Down); break;
             case GamepadAction.Left: Navigate(NavDirection.Left); break;
@@ -204,6 +209,7 @@ public partial class OverlayWindow : Window
     {
         if (_text is null) return;
         _selection = selection;
+        _definition = null;
         var r = selection.Bounds(_text);
         r.Inflate(5, 4);
         SelectionBox.Width = r.Width;
@@ -270,11 +276,28 @@ public partial class OverlayWindow : Window
         Card.Visibility = Visibility.Collapsed;
     }
 
-    private async void OnSpeakClick(object sender, RoutedEventArgs e)
+    private void OnSpeakClick(object sender, RoutedEventArgs e) => SpeakWord();
+
+    private void OnSpeakSentenceClick(object sender, RoutedEventArgs e) => SpeakSentence();
+
+    private void SpeakWord()
     {
-        var word = _definition?.Word ?? CardWord.Text;
-        try { await _pronouncer.SpeakAsync(word); }
-        catch { /* No audio device: ignore. */ }
+        if (_text is null || _selection is not { } selection) return;
+        // The word corrected by Claude is better than the raw OCR text.
+        Speak(_definition?.Word ?? selection.Phrase(_text));
+    }
+
+    private void SpeakSentence()
+    {
+        if (_text is null || _selection is not { } selection) return;
+        Speak(ContextBuilder.Sentence(_text, selection.LineIndex));
+    }
+
+    private async void Speak(string text)
+    {
+        try { await _pronouncer.SpeakAsync(text); }
+        catch (OperationCanceledException) { /* A newer request replaced this one. */ }
+        catch { StatusText.Text = "Voix indisponible"; }
     }
 
     /// <summary>Converts capture pixels to window coordinates (the Viewbox scale).</summary>

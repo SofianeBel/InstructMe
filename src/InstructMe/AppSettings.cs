@@ -9,6 +9,9 @@ internal sealed class AppSettings
     public string Hotkey { get; set; } = "Ctrl+Alt+L";
     public string Model { get; set; } = "claude-haiku-4-5";
 
+    /// <summary>Free Microsoft neural voice (online). Empty: use only the installed Windows voices.</summary>
+    public string Voice { get; set; } = "en-US-EmmaMultilingualNeural";
+
     /// <summary>Optional. The ANTHROPIC_API_KEY environment variable is used first.</summary>
     public string? AnthropicApiKey { get; set; }
 

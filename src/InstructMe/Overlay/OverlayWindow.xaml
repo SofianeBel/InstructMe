@@ -59,6 +59,34 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="SpeakSentenceButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Height="34" CornerRadius="17" Padding="14,0,16,0"
+                                Background="#66FFFFFF" BorderBrush="{StaticResource GlassEdge}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE767;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                           Foreground="{StaticResource Ink}" VerticalAlignment="Center" />
+                                <TextBlock Text="Écouter la phrase" FontSize="14" FontWeight="Medium" Margin="8,0,0,1"
+                                           Foreground="{StaticResource Ink}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#B3FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root">
@@ -93,7 +121,7 @@
 
             <Border x:Name="HintBar" Style="{StaticResource Glass}" CornerRadius="22" Padding="28,11,28,12">
                 <TextBlock x:Name="HintText" FontSize="15" Foreground="{StaticResource Ink}"
-                           Text="Souris : sélectionner   ·   Maj + clic : étendre   ·   Manette : naviguer   ·   RB : étendre   ·   B / Échap : quitter" />
+                           Text="Souris : sélectionner   ·   Maj + clic : étendre   ·   Manette : naviguer   ·   RB : étendre   ·   Y / P : écouter   ·   B / Échap : quitter" />
             </Border>
 
             <Border x:Name="Card" Style="{StaticResource Glass}" CornerRadius="26" Width="400" Padding="24,18,24,22" Visibility="Collapsed">
@@ -102,7 +130,7 @@
                         <TextBlock x:Name="CardMeta" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkSoft}"
                                    VerticalAlignment="Center" Text="ANGLAIS" />
                         <Button x:Name="SpeakButton" Style="{StaticResource SpeakButton}" HorizontalAlignment="Right"
-                                ToolTip="Écouter la prononciation" Click="OnSpeakClick" />
+                                ToolTip="Écouter le mot  (P · Y)" Click="OnSpeakClick" />
                     </Grid>
                     <TextBlock x:Name="CardWord" FontSize="36" FontWeight="SemiBold" Foreground="{StaticResource Ink}"
                                TextWrapping="Wrap" Margin="0,2,0,0" />
@@ -110,6 +138,8 @@
                     <Border Height="1" Background="#59FFFFFF" Margin="0,14,0,12" />
                     <TextBlock x:Name="CardTranslation" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource Ink}" TextWrapping="Wrap" />
                     <TextBlock x:Name="CardMeaning" FontSize="17" Foreground="#2A2E36" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="25" />
+                    <Button x:Name="SpeakSentenceButton" Style="{StaticResource SpeakSentenceButton}" HorizontalAlignment="Left"
+                            Margin="0,14,0,0" ToolTip="Écouter la phrase du jeu  (Maj+P · X)" Click="OnSpeakSentenceClick" />
                 </StackPanel>
             </Border>
         </Canvas>

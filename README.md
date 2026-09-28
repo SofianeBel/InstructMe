@@ -34,7 +34,7 @@ flowchart LR
 | 🧊 **Frozen capture** | Words do not move while you read. |
 | 🎯 **Word or phrase** | Pick one word, or grow the selection for phrases like *give up*. |
 | 🇫🇷 **Meaning in context** | Not a dictionary list: the meaning *in this game sentence*. |
-| 🔊 **Pronunciation** | Phonetics and a Windows voice. |
+| 🔊 **Listen** | Hear the word or the full game sentence with a natural neural voice. |
 | 🪟 **Liquid Glass look** | Translucent, blurred panels. The game stays visible. |
 
 ---
@@ -72,6 +72,8 @@ flowchart LR
 | Show the meaning | Click the word · `Enter` | **A** |
 | Add the next word (phrase) | `Shift`+click · `Shift+→` | **RB** |
 | Remove the last word | `Shift+←` | **LB** |
+| 🔊 Hear the word | 🔊 button · `P` | **Y** |
+| 🔊 Hear the sentence | **Écouter la phrase** · `Shift+P` | **X** |
 | Back to the game | `Esc` | **B** |
 
 ### 🎛️ Stream Deck
@@ -88,6 +90,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
 {
   "hotkey": "Ctrl+Alt+L",
   "model": "claude-haiku-4-5",
+  "voice": "en-US-EmmaMultilingualNeural",
   "anthropicApiKey": null
 }
 ```
@@ -96,6 +99,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
 |---|---|
 | `hotkey` | Any `Ctrl` / `Alt` / `Shift` / `Win` + key, e.g. `Ctrl+Shift+F9`. Restart the app after a change. |
 | `model` | Claude model for the definitions. Haiku is fast and cheap. |
+| `voice` | Free Microsoft neural voice, e.g. `en-US-AndrewMultilingualNeural` or `en-GB-SoniaNeural`. Empty `""` = Windows voices only. |
 | `anthropicApiKey` | Only if you do not use the `ANTHROPIC_API_KEY` variable. |
 
 Errors are written to `%APPDATA%\InstructMe\error.log`.
@@ -112,6 +116,7 @@ Errors are written to `%APPDATA%\InstructMe\error.log`.
 | Xbox-compatible controllers only | Input uses XInput. PlayStation pads work through Steam Input or DS4Windows. |
 | Online only for meanings | The selected words and their sentence are sent to the Claude API. The screenshot is not sent. |
 | HDR screens | Captures can look washed out. |
+| Neural voice needs internet | It uses the free, unofficial Edge "Read aloud" service. Microsoft can change it. Offline, the app falls back to an installed English Windows voice (Settings → Time & language → Speech). |
 
 ---
 

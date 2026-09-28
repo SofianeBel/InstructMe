@@ -2,7 +2,7 @@ namespace InstructMe.Input;
 
 internal enum NavDirection { Up, Down, Left, Right }
 
-internal enum GamepadAction { Up, Down, Left, Right, Confirm, Cancel, Extend, Shrink }
+internal enum GamepadAction { Up, Down, Left, Right, Confirm, Cancel, Extend, Shrink, SpeakWord, SpeakSentence }
 
 /// <summary>
 /// Turns raw XInput state into overlay actions: button presses fire once,
@@ -11,7 +11,7 @@ internal enum GamepadAction { Up, Down, Left, Right, Confirm, Cancel, Extend, Sh
 internal sealed class GamepadInterpreter
 {
     public const ushort DpadUp = 0x0001, DpadDown = 0x0002, DpadLeft = 0x0004, DpadRight = 0x0008;
-    public const ushort ButtonLb = 0x0100, ButtonRb = 0x0200, ButtonA = 0x1000, ButtonB = 0x2000;
+    public const ushort ButtonLb = 0x0100, ButtonRb = 0x0200, ButtonA = 0x1000, ButtonB = 0x2000, ButtonX = 0x4000, ButtonY = 0x8000;
 
     private const short StickThreshold = 18000;
     private static readonly TimeSpan FirstRepeat = TimeSpan.FromMilliseconds(350);
@@ -54,6 +54,8 @@ internal sealed class GamepadInterpreter
         if ((pressed & ButtonB) != 0) actions.Add(GamepadAction.Cancel);
         if ((pressed & ButtonRb) != 0) actions.Add(GamepadAction.Extend);
         if ((pressed & ButtonLb) != 0) actions.Add(GamepadAction.Shrink);
+        if ((pressed & ButtonY) != 0) actions.Add(GamepadAction.SpeakWord);
+        if ((pressed & ButtonX) != 0) actions.Add(GamepadAction.SpeakSentence);
         _previousButtons = buttons;
 
         return actions;
