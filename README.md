@@ -135,3 +135,14 @@ Run the tests:
 dotnet test
 ```
 
+---
+
+## 🤝 Contributing
+
+Ideas, bug reports, and pull requests are welcome.
+
+| 📄 Read | 🎯 For |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to set up, test, commit, and open a pull request. |
+| [AI_GUIDELINES.md](AI_GUIDELINES.md) | Rules when an AI tool helps you write code. |
+| [AGENTS.md](AGENTS.md) | Instructions that AI coding agents read in this repo. |
