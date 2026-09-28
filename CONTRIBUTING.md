@@ -104,6 +104,12 @@ In the description, write:
 
 ---
 
+## 📜 License of your contribution
+
+InstructMe is under the [GNU GPL v3.0 or later](LICENSE). When you submit a change, you agree that it is released under the same license. Do not add code or assets with a license that is not compatible with the GPL v3.
+
+---
+
 ## 💬 Code of conduct
 
 Be kind and patient. Criticize code, not people. We are all here to learn.

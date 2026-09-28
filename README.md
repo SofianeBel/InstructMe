@@ -146,3 +146,13 @@ Ideas, bug reports, and pull requests are welcome.
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to set up, test, commit, and open a pull request. |
 | [AI_GUIDELINES.md](AI_GUIDELINES.md) | Rules when an AI tool helps you write code. |
 | [AGENTS.md](AGENTS.md) | Instructions that AI coding agents read in this repo. |
+
+---
+
+## 📜 License
+
+InstructMe is free software under the [GNU GPL v3.0 or later](LICENSE).
+
+| ✅ You can | 📌 If you share it, you must |
+|---|---|
+| Use it, study it, change it, and share it. Also for commercial use. | Keep it under the GPL, share the source code, and keep the copyright and license notices. |

@@ -22,7 +22,7 @@ flowchart LR
 |---|---|
 | Read and understand all generated code before you submit it. | Add a `Signed-off-by:` line. Only a human can certify the [DCO](https://developercertificate.org/). |
 | Answer review questions about it yourself. | Open, merge, or push pull requests without a human decision. |
-| Make sure the code can legally go in this project (no copied code with an incompatible license). | Decide about security issues or public disclosure. |
+| Make sure the code can legally go in this project: it must be compatible with the [GPL v3.0 or later](LICENSE) (no copied code with an incompatible license). | Decide about security issues or public disclosure. |
 
 "The AI wrote it" is never an answer in a review.
 
