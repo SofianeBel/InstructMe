@@ -4,17 +4,13 @@
 
 Press a shortcut. The screen freezes. Click a word. A glass card tells you what it means in French, *in this sentence*.
 
-```
- ┌───────────────────────────────────────────────┐
- │  Make the people happy — [reach] a satisfac…  │   ┌──────────────────────────┐
- │                                               │ → │ ANGLAIS · VERBE      🔊  │
- │                                               │   │ reach   /riːtʃ/          │
- │                                               │   │ ──────────────────────── │
- │                                               │   │ atteindre                │
- │                                               │   │ Ici : atteindre un niveau│
- │                                               │   │ de satisfaction de 60.   │
- └───────────────────────────────────────────────┘   └──────────────────────────┘
-```
+<p align="center">
+  <a href="docs/showreel.mp4">
+    <img src="docs/showreel.gif" alt="InstructMe showreel: the game freezes, the player clicks 'reach', and a glass card shows the French meaning 'atteindre'." width="100%">
+  </a>
+  <br>
+  <sub>🎬 <b>15-second showreel.</b> <a href="docs/showreel.mp4">Watch it in HD with sound</a> · made in code with <a href="showreel/">Remotion</a></sub>
+</p>
 
 ---
 
@@ -138,3 +134,4 @@ Run the tests:
 ```bash
 dotnet test
 ```
+
