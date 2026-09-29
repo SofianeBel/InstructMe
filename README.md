@@ -100,7 +100,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
 | `hotkey` | Any `Ctrl` / `Alt` / `Shift` / `Win` + key, e.g. `Ctrl+Shift+F9`. Restart the app after a change. |
 | `model` | Claude model for the definitions. Haiku is fast and cheap. |
 | `voice` | Free Microsoft neural voice, e.g. `en-US-AndrewMultilingualNeural` or `en-GB-SoniaNeural`. Empty `""` = Windows voices only. |
-| `anthropicApiKey` | Only if you do not use the `ANTHROPIC_API_KEY` variable. |
+| `anthropicApiKey` | The key entered in settings takes priority. If empty, the app uses `ANTHROPIC_API_KEY`. |
 
 Errors are written to `%APPDATA%\InstructMe\error.log`.
 

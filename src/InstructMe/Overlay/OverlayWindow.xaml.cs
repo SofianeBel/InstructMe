@@ -262,7 +262,7 @@ public partial class OverlayWindow : Window
             CardTranslation.Text = "Indisponible";
             CardMeaning.Text = ex switch
             {
-                Anthropic.Exceptions.AnthropicUnauthorizedException => "Clé API refusée. Vérifiez ANTHROPIC_API_KEY.",
+                Anthropic.Exceptions.AnthropicUnauthorizedException => "Clé API refusée. Vérifiez la clé dans les réglages d'InstructMe.",
                 Anthropic.Exceptions.AnthropicRateLimitException => "Trop de demandes. Réessayez dans un instant.",
                 System.Net.Http.HttpRequestException => "Pas de connexion au service de définitions.",
                 _ => ex.Message,

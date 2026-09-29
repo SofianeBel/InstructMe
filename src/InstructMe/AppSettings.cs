@@ -12,7 +12,7 @@ internal sealed class AppSettings
     /// <summary>Free Microsoft neural voice (online). Empty: use only the installed Windows voices.</summary>
     public string Voice { get; set; } = "en-US-EmmaMultilingualNeural";
 
-    /// <summary>Optional. The ANTHROPIC_API_KEY environment variable is used first.</summary>
+    /// <summary>Optional. Takes priority over the ANTHROPIC_API_KEY environment variable.</summary>
     public string? AnthropicApiKey { get; set; }
 
     public static string FilePath { get; } = Path.Combine(
@@ -47,7 +47,7 @@ internal sealed class AppSettings
 
     public AppSettings Clone() => (AppSettings)MemberwiseClone();
 
-    /// <summary>The key from ANTHROPIC_API_KEY, or null. It has priority over the saved key.</summary>
+    /// <summary>The fallback key from ANTHROPIC_API_KEY, or null.</summary>
     public static string? EnvironmentApiKey()
     {
         // Also read the saved user variable: after `setx`, apps started from an old
@@ -61,5 +61,5 @@ internal sealed class AppSettings
     }
 
     public string? ResolveApiKey() =>
-        EnvironmentApiKey() ?? (string.IsNullOrWhiteSpace(AnthropicApiKey) ? null : AnthropicApiKey.Trim());
+        string.IsNullOrWhiteSpace(AnthropicApiKey) ? EnvironmentApiKey() : AnthropicApiKey.Trim();
 }
