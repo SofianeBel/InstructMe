@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Replace outdated pull request runs, but never stop a release halfway.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release
+
+  release:
+    name: Release
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: windows-latest
+    permissions:
+      contents: write       # push the tag, create the release
+      issues: write         # comment on issues fixed by the release
+      pull-requests: write  # comment on pull requests in the release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # semantic-release reads every commit since the last tag
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Reads .releaserc.json: picks the next version from Conventional Commits,
+      # builds the .exe, tags the commit, and publishes the GitHub release.
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          npx --yes
+          -p 'semantic-release@25'
+          -p '@semantic-release/exec@7'
+          -p 'conventional-changelog-conventionalcommits@9'
+          semantic-release

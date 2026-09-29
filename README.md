@@ -1,5 +1,9 @@
 # 📖 InstructMe
 
+[![CI](https://github.com/SofianeBel/InstructMe/actions/workflows/ci.yml/badge.svg)](https://github.com/SofianeBel/InstructMe/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/SofianeBel/InstructMe?label=download)](https://github.com/SofianeBel/InstructMe/releases/latest)
+[![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
+
 **Understand any English word in your game, without leaving the game.**
 
 Press a shortcut. The screen freezes. Click a word. A glass card tells you what it means in French, *in this sentence*.
@@ -37,23 +41,23 @@ flowchart LR
 
 ## 🚀 Quick start
 
-**You need:** Windows 10 (2004+) or 11, the [.NET 10 SDK](https://dotnet.microsoft.com/download), and a [Claude API key](https://console.anthropic.com/).
+**You need:** Windows 10 (2004+) or 11 and a [Claude API key](https://console.anthropic.com/).
 
-1. Give the app your API key (once):
+1. ⬇️ **[Download InstructMe.exe](https://github.com/SofianeBel/InstructMe/releases/latest/download/InstructMe.exe)**. It is one file. You do not need to install .NET.
+
+   > 🛡️ The file is not code-signed. If Windows SmartScreen stops it, click **More info → Run anyway**.
+
+2. Give the app your API key (once):
 
    ```bash
    setx ANTHROPIC_API_KEY "sk-ant-..."
    ```
 
-2. Start the app:
+3. Start `InstructMe.exe`. An ℹ️ icon appears in the system tray.
 
-   ```bash
-   dotnet run --project src/InstructMe
-   ```
+4. In your game, press **Ctrl + Alt + L**.
 
-   An ℹ️ icon appears in the system tray.
-
-3. In your game, press **Ctrl + Alt + L**.
+> 🧑‍💻 **From the source code:** install the [.NET 10 SDK](https://dotnet.microsoft.com/download), then run `dotnet run --project src/InstructMe`.
 
 > 💡 **Tip:** Play in **borderless window** mode. Exclusive fullscreen can minimize the game when the overlay opens.
 

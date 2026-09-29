@@ -70,6 +70,27 @@ docs(readme): add the showreel
 | `refactor` | Code change with the same behavior |
 | `test` / `docs` / `perf` / `build` / `ci` / `chore` | What the name says |
 
+### 🚀 Your commit type sets the next version
+
+Releases are automatic. When a change lands on `main` and CI passes, [semantic-release](https://semantic-release.gitbook.io/) reads the new commits. It picks the version, builds `InstructMe.exe`, and publishes a [GitHub release](https://github.com/SofianeBel/InstructMe/releases) with notes.
+
+```mermaid
+flowchart LR
+    A["🔀 Merge to main"] --> B["✅ CI: build + test"]
+    B --> C["🔎 Read commit types"]
+    C --> D["🏷️ Tag vX.Y.Z"]
+    D --> E["📦 Release with .exe"]
+```
+
+| Commit on `main` | Next version |
+|---|---|
+| `fix:` or `perf:` | Patch: 1.2.3 → 1.2.**4** |
+| `feat:` | Minor: 1.2.3 → 1.**3**.0 |
+| `feat!:` or a `BREAKING CHANGE:` footer | Major: 1.2.3 → **2**.0.0 |
+| `docs`, `test`, `refactor`, `build`, `ci`, `chore`, or the `showreel` scope | No release |
+
+> ⚠️ A wrong type makes a wrong version. With a squash merge, the pull request title becomes the commit, so it must follow the same format.
+
 ### 🖊️ Sign your work (DCO)
 
 Like the [Linux kernel](https://docs.kernel.org/process/submitting-patches.html#sign-your-work-the-developer-s-certificate-of-origin), every commit needs a `Signed-off-by:` line. With it, you certify the [Developer Certificate of Origin](https://developercertificate.org/): you wrote the change, or you have the right to submit it.
@@ -91,7 +112,7 @@ That is OK. Read [AI_GUIDELINES.md](AI_GUIDELINES.md) and add an `Assisted-by:` 
 Before you open it:
 
 - [ ] `dotnet build` has no new warnings.
-- [ ] `dotnet test` passes.
+- [ ] `dotnet test` passes. CI runs both again on your pull request.
 - [ ] Your branch is up to date with `main`.
 - [ ] No secret, API key, or personal path is in the diff.
 
