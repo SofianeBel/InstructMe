@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using InstructMe.Capture;
@@ -6,6 +6,7 @@ using InstructMe.Definitions;
 using InstructMe.Input;
 using InstructMe.Native;
 using InstructMe.Overlay;
+using InstructMe.Settings;
 using InstructMe.Text;
 using Forms = System.Windows.Forms;
 
@@ -18,12 +19,15 @@ namespace InstructMe;
 public partial class App : Application
 {
     private Mutex? _singleInstance;
+    private AppSettings _settings = new();
+    private HotkeyGesture _gesture;
     private GlobalHotkey? _hotkey;
     private Forms.NotifyIcon? _tray;
     private TextDetector? _detector;
     private DefinitionService? _definitions;
     private Pronouncer? _pronouncer;
     private OverlayWindow? _overlay;
+    private SettingsWindow? _settingsWindow;
     private bool _opening;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -49,14 +53,15 @@ public partial class App : Application
 
         try
         {
-            var settings = AppSettings.Load();
-            var gesture = HotkeyGesture.Parse(settings.Hotkey);
+            _settings = AppSettings.Load();
+            _gesture = HotkeyGesture.Parse(_settings.Hotkey);
             _detector = TextDetector.Create();
-            _definitions = new DefinitionService(settings);
-            _pronouncer = new Pronouncer(settings.Voice);
-            _hotkey = new GlobalHotkey(gesture);
+            _definitions = new DefinitionService(_settings);
+            _pronouncer = new Pronouncer(_settings.Voice);
+            _hotkey = new GlobalHotkey(_gesture);
             _hotkey.Pressed += OnHotkey;
-            CreateTray(gesture);
+            CreateTray();
+            if (_definitions.HasApiKey is false) OpenSettings();
         }
         catch (Exception ex)
         {
@@ -65,21 +70,92 @@ public partial class App : Application
         }
     }
 
-    private void CreateTray(HotkeyGesture gesture)
+    private void CreateTray()
     {
         var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Ouvrir les réglages", null, (_, _) =>
-            Process.Start(new ProcessStartInfo(AppSettings.FilePath) { UseShellExecute = true }));
+        menu.Items.Add("Réglages", null, (_, _) => OpenSettings());
         menu.Items.Add("Quitter", null, (_, _) => Shutdown());
 
         _tray = new Forms.NotifyIcon
         {
             Icon = System.Drawing.SystemIcons.Information,
-            Text = $"InstructMe · {gesture.Text}",
+            Text = $"InstructMe · {_gesture.Text}",
             ContextMenuStrip = menu,
             Visible = true,
         };
-        _tray.ShowBalloonTip(3000, "InstructMe", $"Appuyez sur {gesture.Text} en jeu pour lire un mot.", Forms.ToolTipIcon.None);
+        _tray.DoubleClick += (_, _) => OpenSettings();
+        _tray.ShowBalloonTip(3000, "InstructMe", $"Appuyez sur {_gesture.Text} en jeu pour lire un mot.", Forms.ToolTipIcon.None);
+    }
+
+    private void OpenSettings()
+    {
+        if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+        _overlay?.Close();
+        _settingsWindow = new SettingsWindow(_settings, ApplySettings);
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
+        _settingsWindow.Activate();
+    }
+
+    /// <summary>Saves and applies new settings. Returns a French error for the player, or null.</summary>
+    private string? ApplySettings(AppSettings next)
+    {
+        HotkeyGesture gesture;
+        try
+        {
+            gesture = HotkeyGesture.Parse(next.Hotkey);
+        }
+        catch (FormatException)
+        {
+            return $"Raccourci non valide : {next.Hotkey}.";
+        }
+
+        // Register the new shortcut before the old one is released, so a failure changes nothing.
+        bool sameShortcut = gesture.Modifiers == _gesture.Modifiers && gesture.VirtualKey == _gesture.VirtualKey;
+        GlobalHotkey? newHotkey = null;
+        if (!sameShortcut)
+        {
+            try
+            {
+                newHotkey = new GlobalHotkey(gesture);
+            }
+            catch (Win32Exception)
+            {
+                return $"Le raccourci {gesture.Text} est déjà utilisé par une autre application.";
+            }
+        }
+
+        try
+        {
+            next.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            newHotkey?.Dispose();
+            return $"Enregistrement impossible : {ex.Message}";
+        }
+
+        _overlay?.Close();
+        if (newHotkey is not null)
+        {
+            _hotkey?.Dispose();
+            _hotkey = newHotkey;
+            _hotkey.Pressed += OnHotkey;
+        }
+        if (next.Voice != _settings.Voice)
+        {
+            _pronouncer?.Dispose();
+            _pronouncer = new Pronouncer(next.Voice);
+        }
+        _definitions = new DefinitionService(next);
+        _settings = next;
+        _gesture = gesture;
+        if (_tray is not null) _tray.Text = $"InstructMe · {gesture.Text}";
+        return null;
     }
 
     private async void OnHotkey()

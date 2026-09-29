@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Anthropic;
+using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
 
 namespace InstructMe.Definitions;
@@ -62,12 +63,36 @@ internal sealed class DefinitionService
 
     public bool HasApiKey => _settings.ResolveApiKey() is not null;
 
+    /// <summary>Sends the smallest possible request to check the key and the model. Returns an error, or null.</summary>
+    public static async Task<string?> TestAsync(string apiKey, string model, CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(20));
+        try
+        {
+            var client = new AnthropicClient { ApiKey = apiKey };
+            await client.Messages.Create(new MessageCreateParams
+            {
+                Model = model,
+                MaxTokens = 1,
+                Messages = [new() { Role = Role.User, Content = "Hi" }],
+            }, timeout.Token);
+            return null;
+        }
+        catch (AnthropicUnauthorizedException) { return "Clé refusée par Anthropic."; }
+        catch (AnthropicForbiddenException) { return "Cette clé n'a pas accès à l'API."; }
+        catch (AnthropicNotFoundException) { return $"Modèle inconnu : {model}."; }
+        catch (AnthropicRateLimitException) { return "Limite d'utilisation atteinte. Réessayez plus tard."; }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return "Pas de réponse du serveur."; }
+        catch (Exception ex) when (ex is not OperationCanceledException) { return ex.Message; }
+    }
+
     public async Task<WordDefinition> DefineAsync(string phrase, string sentence, CancellationToken cancellationToken)
     {
         if (_cache.TryGetValue((phrase, sentence), out var cached)) return cached;
 
         var apiKey = _settings.ResolveApiKey()
-            ?? throw new InvalidOperationException("Aucune clé API. Définissez ANTHROPIC_API_KEY ou « anthropicApiKey » dans settings.json.");
+            ?? throw new InvalidOperationException("Aucune clé API. Ajoutez-la dans les réglages d'InstructMe.");
         _client ??= new AnthropicClient { ApiKey = apiKey };
 
         var response = await _client.Messages.Create(new MessageCreateParams

@@ -237,7 +237,7 @@ public partial class OverlayWindow : Window
         CardTranslation.Text = "…";
         CardMeaning.Text = _definitions.HasApiKey
             ? "Analyse du contexte…"
-            : "Aucune clé API Claude. Définissez ANTHROPIC_API_KEY, puis relancez InstructMe.";
+            : "Aucune clé API Claude. Ajoutez-la dans les réglages (icône InstructMe de la barre des tâches).";
         Card.Visibility = Visibility.Visible;
         PlaceCard();
         if (!_definitions.HasApiKey) return;

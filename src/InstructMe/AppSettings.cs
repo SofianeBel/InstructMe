@@ -39,7 +39,16 @@ internal sealed class AppSettings
         return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), JsonOptions) ?? new AppSettings();
     }
 
-    public string? ResolveApiKey()
+    public void Save()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOptions));
+    }
+
+    public AppSettings Clone() => (AppSettings)MemberwiseClone();
+
+    /// <summary>The key from ANTHROPIC_API_KEY, or null. It has priority over the saved key.</summary>
+    public static string? EnvironmentApiKey()
     {
         // Also read the saved user variable: after `setx`, apps started from an old
         // terminal do not get the new value in their own environment.
@@ -48,6 +57,9 @@ internal sealed class AppSettings
             var fromEnvironment = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY", target);
             if (!string.IsNullOrWhiteSpace(fromEnvironment)) return fromEnvironment.Trim();
         }
-        return string.IsNullOrWhiteSpace(AnthropicApiKey) ? null : AnthropicApiKey;
+        return null;
     }
+
+    public string? ResolveApiKey() =>
+        EnvironmentApiKey() ?? (string.IsNullOrWhiteSpace(AnthropicApiKey) ? null : AnthropicApiKey.Trim());
 }
