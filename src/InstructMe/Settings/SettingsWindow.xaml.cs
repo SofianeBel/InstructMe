@@ -172,18 +172,17 @@ public partial class SettingsWindow : Window
 
     private void UpdateKeyStatus()
     {
-        bool fromEnvironment = AppSettings.EnvironmentApiKey() is not null;
         bool saved = !string.IsNullOrWhiteSpace(ApiKeyBox.Password);
 
-        if (fromEnvironment)
+        if (saved)
+        {
+            SetBadge("Clé saisie", "#1F1E8E3E", "#1E6E34");
+            KeyHint.Text = "Cette clé a priorité sur ANTHROPIC_API_KEY. Elle reste sur cet ordinateur et n'est envoyée qu'à Anthropic.";
+        }
+        else if (AppSettings.EnvironmentApiKey() is not null)
         {
             SetBadge("Variable d'environnement", "#1A0A84FF", "#0A5CC2");
-            KeyHint.Text = "ANTHROPIC_API_KEY est définie : elle a priorité sur la clé ci-dessous.";
-        }
-        else if (saved)
-        {
-            SetBadge("Clé enregistrée", "#1F1E8E3E", "#1E6E34");
-            KeyHint.Text = "La clé reste sur cet ordinateur, dans settings.json. Elle n'est envoyée qu'à Anthropic.";
+            KeyHint.Text = "ANTHROPIC_API_KEY est utilisée. Entrez une clé ci-dessous pour la remplacer dans InstructMe.";
         }
         else
         {

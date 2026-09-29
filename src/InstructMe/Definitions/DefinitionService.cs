@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Net.Http;
 using System.Text.Json;
 using Anthropic;
+using Anthropic.Core;
 using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
 
@@ -63,6 +65,19 @@ internal sealed class DefinitionService
 
     public bool HasApiKey => _settings.ResolveApiKey() is not null;
 
+    internal static AnthropicClient CreateClient(string apiKey, HttpClient? httpClient = null)
+    {
+        // Set credentials before construction to skip SDK credential auto-resolution.
+        var options = new ClientOptions
+        {
+            ApiKey = apiKey,
+            AuthToken = null,
+            BaseUrl = EnvironmentUrl.Production,
+        };
+        if (httpClient is not null) options.HttpClient = httpClient;
+        return new AnthropicClient(options);
+    }
+
     /// <summary>Sends the smallest possible request to check the key and the model. Returns an error, or null.</summary>
     public static async Task<string?> TestAsync(string apiKey, string model, CancellationToken cancellationToken)
     {
@@ -70,7 +85,7 @@ internal sealed class DefinitionService
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
         try
         {
-            var client = new AnthropicClient { ApiKey = apiKey };
+            using var client = CreateClient(apiKey);
             await client.Messages.Create(new MessageCreateParams
             {
                 Model = model,
@@ -93,7 +108,7 @@ internal sealed class DefinitionService
 
         var apiKey = _settings.ResolveApiKey()
             ?? throw new InvalidOperationException("Aucune clé API. Ajoutez-la dans les réglages d'InstructMe.");
-        _client ??= new AnthropicClient { ApiKey = apiKey };
+        _client ??= CreateClient(apiKey);
 
         var response = await _client.Messages.Create(new MessageCreateParams
         {
