@@ -36,6 +36,32 @@
         <SolidColorBrush x:Key="InkSoft" Color="#454A55" />
         <SolidColorBrush x:Key="Accent" Color="#0A84FF" />
 
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="#80FFFFFF" CornerRadius="15"
+                                Padding="{TemplateBinding Padding}" BorderBrush="{StaticResource GlassEdge}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#DFFFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="SpeakButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -102,6 +128,11 @@
                         </Border.Effect>
                     </Border>
                 </Canvas>
+                <Canvas x:Name="RegionLayer" Background="#18000000" Visibility="Collapsed" Cursor="Cross"
+                        MouseLeftButtonDown="OnRegionMouseDown" MouseMove="OnRegionMouseMove" MouseLeftButtonUp="OnRegionMouseUp">
+                    <Border x:Name="RegionBox" Visibility="Collapsed" IsHitTestVisible="False"
+                            BorderThickness="2" BorderBrush="{StaticResource Accent}" Background="#280A84FF" />
+                </Canvas>
             </Grid>
         </Viewbox>
 
@@ -119,12 +150,25 @@
                 <TextBlock x:Name="StatusText" FontSize="17" FontWeight="Medium" Foreground="{StaticResource Ink}" Text="Capture…" />
             </Border>
 
+            <Border x:Name="RecoveryToolbar" Style="{StaticResource Glass}" CornerRadius="20" Padding="8">
+                <WrapPanel>
+                    <Button Style="{StaticResource ActionButton}" Content="Relire une zone" Click="OnRegionClick" Margin="3"
+                            ToolTip="Dessinez un rectangle autour du texte à relire (R)" />
+                    <Button Style="{StaticResource ActionButton}" Content="Tout l’écran" Click="OnFullScanClick" Margin="3" />
+                    <Button Style="{StaticResource ActionButton}" Content="Saisir / corriger" Click="OnCorrectClick" Margin="3"
+                            ToolTip="Corriger le mot et son contexte, ou les saisir si l’OCR ne les trouve pas (E)" />
+                    <Button Style="{StaticResource ActionButton}" Content="Mon vocabulaire" Click="OnVocabularyClick" Margin="3"
+                            ToolTip="Retrouver les traductions de vos sessions (H)" />
+                </WrapPanel>
+            </Border>
+
             <Border x:Name="HintBar" Style="{StaticResource Glass}" CornerRadius="22" Padding="28,11,28,12">
-                <TextBlock x:Name="HintText" FontSize="15" Foreground="{StaticResource Ink}"
-                           Text="Souris : sélectionner   ·   Maj + clic : étendre   ·   Manette : naviguer   ·   RB : étendre   ·   Y / P : écouter   ·   B / Échap : quitter" />
+                <TextBlock x:Name="HintText" FontSize="14" Foreground="{StaticResource Ink}" TextWrapping="Wrap" TextAlignment="Center"
+                           Text="Clic / A : expliquer · Maj + clic / RB : étendre · Y / P : écouter · R : relire une zone · E : corriger · H : vocabulaire · B / Échap : quitter" />
             </Border>
 
             <Border x:Name="Card" Style="{StaticResource Glass}" CornerRadius="26" Width="400" Padding="24,18,24,22" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <Grid>
                         <TextBlock x:Name="CardMeta" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkSoft}"
@@ -140,7 +184,36 @@
                     <TextBlock x:Name="CardMeaning" FontSize="17" Foreground="#2A2E36" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="25" />
                     <Button x:Name="SpeakSentenceButton" Style="{StaticResource SpeakSentenceButton}" HorizontalAlignment="Left"
                             Margin="0,14,0,0" ToolTip="Écouter la phrase du jeu  (Maj+P · X)" Click="OnSpeakSentenceClick" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <Button x:Name="RetryButton" Style="{StaticResource ActionButton}" Content="Réessayer" Click="OnRetryClick"
+                                ToolTip="Relancer la recherche (F5)" Visibility="Collapsed" Margin="0,0,8,0" />
+                        <Button Style="{StaticResource ActionButton}" Content="Corriger le texte" Click="OnCorrectClick" />
+                    </WrapPanel>
+                    <TextBlock x:Name="SavedText" FontSize="12" Foreground="{StaticResource InkSoft}" TextWrapping="Wrap" Margin="0,12,0,0" />
                 </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="CorrectionEditor" Style="{StaticResource Glass}" CornerRadius="26" Width="560" Padding="24" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Saisir ou corriger le texte" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource Ink}" />
+                        <TextBlock Text="Le contexte aide à trouver le bon sens. Vous pouvez aussi saisir un texte que l’OCR n’a pas reconnu."
+                                   FontSize="14" Foreground="{StaticResource InkSoft}" TextWrapping="Wrap" Margin="0,8,0,18" />
+                        <TextBlock Text="Mot ou expression en anglais" FontSize="14" Foreground="{StaticResource Ink}" />
+                        <TextBox x:Name="PhraseBox" FontSize="18" Padding="10,8" Margin="0,6,0,16" MaxLength="160"
+                                 AutomationProperties.Name="Mot ou expression en anglais" />
+                        <TextBlock Text="Phrase du jeu (contexte)" FontSize="14" Foreground="{StaticResource Ink}" />
+                        <TextBox x:Name="ContextBox" FontSize="16" Padding="10,8" Margin="0,6,0,12" MinHeight="85" MaxHeight="160"
+                                 MaxLength="2400" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="Phrase du jeu" />
+                        <TextBlock x:Name="CorrectionError" Foreground="#A3261F" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,12" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource ActionButton}" Content="Annuler" Click="OnCancelCorrectionClick" Margin="0,0,10,0" />
+                            <Button Style="{StaticResource ActionButton}" Content="Expliquer" Click="OnTranslateCorrectionClick" ToolTip="Ctrl + Entrée" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Canvas>
     </Grid>

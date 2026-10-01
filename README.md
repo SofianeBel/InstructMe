@@ -35,6 +35,8 @@ flowchart LR
 | 🎯 **Word or phrase** | Pick one word, or grow the selection for phrases like *give up*. |
 | 🇫🇷 **Meaning in context** | Not a dictionary list: the meaning *in this game sentence*. |
 | 🔊 **Listen** | Hear the word or the full game sentence with a natural neural voice. |
+| 🔎 **Recover missed text** | Re-scan a smaller area, or correct the word and its sentence before looking it up. |
+| 📖 **Keep your vocabulary** | Successful translations are saved automatically, with their game sentence, for later review. |
 | 🪟 **Liquid Glass look** | Translucent, blurred panels. The game stays visible. |
 
 ---
@@ -74,11 +76,29 @@ flowchart LR
 | Remove the last word | `Shift+←` | **LB** |
 | 🔊 Hear the word | 🔊 button · `P` | **Y** |
 | 🔊 Hear the sentence | **Écouter la phrase** · `Shift+P` | **X** |
+| Re-scan an area | **Relire une zone** · `R`, then drag a rectangle | — |
+| Correct or type a word and its context | **Saisir / corriger** · `E`; `Ctrl+Enter` to explain | — |
+| Retry a failed lookup | **Réessayer** · `F5` | **A** |
+| Open your vocabulary | **Mon vocabulaire** · `H` | — |
 | Back to the game | `Esc` | **B** |
 
 ### 🎛️ Stream Deck
 
 Add a **Hotkey** action and set it to `Ctrl+Alt+L`. The same button opens and closes the overlay.
+
+### 🔎 When OCR misses a word
+
+Choose **Relire une zone** and draw around the subtitles or dialogue. OCR reads that area at a larger scale and replaces the selectable words with the new result. **Tout l’écran** restores full-screen detection. `Esc` / **B** cancels area selection.
+
+Choose **Saisir / corriger** to edit the selected expression and its game sentence. You can also type them when no text was detected. The app uses that corrected context for the meaning and pronunciation.
+
+### 📖 Your vocabulary between sessions
+
+Open **Mon vocabulaire** from the tray menu or the overlay. Search by English expression, French translation, or game sentence, and switch between **Toutes les sessions** and **Cette session**. A session starts when the app launches. Each successful lookup is saved locally in `%APPDATA%\InstructMe\vocabulary.json`; repeats update the same entry when the expression, context, and model match.
+
+Previously saved meanings can be reused without a network request, including after restarting the app. New meanings need an internet connection. A lookup has a 20-second overall limit and a **Réessayer** action when it fails.
+
+You can also launch `InstructMe.exe --vocabulary` to open the vocabulary window directly.
 
 ---
 
@@ -97,7 +117,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
 
 | Key | Meaning |
 |---|---|
-| `hotkey` | Any `Ctrl` / `Alt` / `Shift` / `Win` + key, e.g. `Ctrl+Shift+F9`. Restart the app after a change. |
+| `hotkey` | Any `Ctrl` / `Alt` / `Shift` / `Win` + key, e.g. `Ctrl+Shift+F9`. Changes saved in the settings window apply immediately; restart after editing the file directly. |
 | `model` | Claude model for the definitions. Haiku is fast and cheap. |
 | `voice` | Free Microsoft neural voice, e.g. `en-US-AndrewMultilingualNeural` or `en-GB-SoniaNeural`. Empty `""` = Windows voices only. |
 | `anthropicApiKey` | The key entered in settings takes priority. If empty, the app uses `ANTHROPIC_API_KEY`. |
@@ -114,7 +134,7 @@ Errors are written to `%APPDATA%\InstructMe\error.log`.
 | Exclusive fullscreen | The overlay takes focus. Some games minimize. Use borderless mode. |
 | Stylized fonts | Windows OCR reads clean UI text best. Decorative fonts can fail. |
 | Xbox-compatible controllers only | Input uses XInput. PlayStation pads work through Steam Input or DS4Windows. |
-| Online only for meanings | The selected words and their sentence are sent to the Claude API. The screenshot is not sent. |
+| New meanings need internet | The selected words and their sentence are sent to the Claude API. The screenshot is not sent. Previously saved meanings remain available locally for the same context and model. |
 | HDR screens | Captures can look washed out. |
 | Neural voice needs internet | It uses the free, unofficial Edge "Read aloud" service. Microsoft can change it. Offline, the app falls back to an installed English Windows voice (Settings → Time & language → Speech). |
 
@@ -129,6 +149,7 @@ src/InstructMe/
 ├── Text/                  OCR, line merging, sentence blocks, word navigation
 ├── Input/                 global shortcut, XInput polling, gamepad → actions
 ├── Definitions/           Claude request (structured JSON), text-to-speech
+├── Vocabulary/            persistent translations, session filtering, review window
 └── Overlay/               full-screen window, glass panels, card placement
 tests/InstructMe.Tests/    layout, navigation, input, and placement tests
 ```

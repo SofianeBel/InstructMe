@@ -8,6 +8,7 @@ using InstructMe.Native;
 using InstructMe.Overlay;
 using InstructMe.Settings;
 using InstructMe.Text;
+using InstructMe.Vocabulary;
 using Forms = System.Windows.Forms;
 
 namespace InstructMe;
@@ -28,6 +29,8 @@ public partial class App : Application
     private Pronouncer? _pronouncer;
     private OverlayWindow? _overlay;
     private SettingsWindow? _settingsWindow;
+    private VocabularyStore? _vocabulary;
+    private VocabularyWindow? _vocabularyWindow;
     private bool _opening;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -56,12 +59,14 @@ public partial class App : Application
             _settings = AppSettings.Load();
             _gesture = HotkeyGesture.Parse(_settings.Hotkey);
             _detector = TextDetector.Create();
-            _definitions = new DefinitionService(_settings);
+            _vocabulary = new VocabularyStore();
+            _definitions = new DefinitionService(_settings, _vocabulary);
             _pronouncer = new Pronouncer(_settings.Voice);
             _hotkey = new GlobalHotkey(_gesture);
             _hotkey.Pressed += OnHotkey;
             CreateTray();
-            if (_definitions.HasApiKey is false) OpenSettings();
+            if (e.Args.Contains("--vocabulary", StringComparer.OrdinalIgnoreCase)) OpenVocabulary();
+            else if (_definitions.HasApiKey is false) OpenSettings();
         }
         catch (Exception ex)
         {
@@ -74,6 +79,7 @@ public partial class App : Application
     {
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Réglages", null, (_, _) => OpenSettings());
+        menu.Items.Add("Mon vocabulaire", null, (_, _) => OpenVocabulary());
         menu.Items.Add("Quitter", null, (_, _) => Shutdown());
 
         _tray = new Forms.NotifyIcon
@@ -99,6 +105,21 @@ public partial class App : Application
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
         _settingsWindow.Activate();
+    }
+
+    private void OpenVocabulary()
+    {
+        _overlay?.Close();
+        if (_vocabularyWindow is not null)
+        {
+            if (_vocabularyWindow.WindowState == WindowState.Minimized) _vocabularyWindow.WindowState = WindowState.Normal;
+            _vocabularyWindow.Activate();
+            return;
+        }
+        _vocabularyWindow = new VocabularyWindow(_vocabulary!, _pronouncer!, _gesture.Text);
+        _vocabularyWindow.Closed += (_, _) => _vocabularyWindow = null;
+        _vocabularyWindow.Show();
+        _vocabularyWindow.Activate();
     }
 
     /// <summary>Saves and applies new settings. Returns a French error for the player, or null.</summary>
@@ -150,10 +171,13 @@ public partial class App : Application
         {
             _pronouncer?.Dispose();
             _pronouncer = new Pronouncer(next.Voice);
+            _vocabularyWindow?.UpdatePronouncer(_pronouncer);
         }
-        _definitions = new DefinitionService(next);
+        _definitions?.Dispose();
+        _definitions = new DefinitionService(next, _vocabulary);
         _settings = next;
         _gesture = gesture;
+        _vocabularyWindow?.UpdateShortcut(gesture.Text);
         if (_tray is not null) _tray.Text = $"InstructMe · {gesture.Text}";
         return null;
     }
@@ -175,7 +199,7 @@ public partial class App : Application
             var monitor = NativeMethods.MonitorFromWindow(previous, NativeMethods.MONITOR_DEFAULTTONEAREST);
             var frame = await ScreenCapture.CaptureMonitorAsync(monitor);
 
-            _overlay = new OverlayWindow(frame, _detector!, _definitions!, _pronouncer!, previous);
+            _overlay = new OverlayWindow(frame, _detector!, _definitions!, _pronouncer!, previous, _vocabulary!, OpenVocabulary);
             _overlay.Closed += (_, _) => _overlay = null;
             _overlay.Show();
         }
@@ -202,6 +226,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _hotkey?.Dispose();
+        _definitions?.Dispose();
         _pronouncer?.Dispose();
         if (_tray is not null)
         {
