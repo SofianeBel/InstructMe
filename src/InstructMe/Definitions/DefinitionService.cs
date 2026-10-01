@@ -5,6 +5,7 @@ using Anthropic;
 using Anthropic.Core;
 using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
+using InstructMe.Vocabulary;
 
 namespace InstructMe.Definitions;
 
@@ -18,13 +19,23 @@ internal sealed record WordDefinition(
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public static WordDefinition Parse(string json) =>
-        JsonSerializer.Deserialize<WordDefinition>(json, JsonOptions)
-        ?? throw new JsonException("Empty definition.");
+    public static WordDefinition Parse(string json)
+    {
+        var definition = JsonSerializer.Deserialize<WordDefinition>(json, JsonOptions)
+            ?? throw new JsonException("Empty definition.");
+        definition.Validate();
+        return definition;
+    }
+
+    public void Validate()
+    {
+        if (new[] { Word, Lemma, PartOfSpeech, Translation, ContextMeaning }.Any(string.IsNullOrWhiteSpace) || Ipa is null)
+            throw new JsonException("Incomplete definition.");
+    }
 }
 
 /// <summary>Asks Claude for the French meaning of an English phrase in its game sentence.</summary>
-internal sealed class DefinitionService
+internal sealed class DefinitionService : IDisposable
 {
     private const string SystemPrompt = """
         Tu aides un joueur francophone qui joue à un jeu vidéo en anglais.
@@ -58,10 +69,21 @@ internal sealed class DefinitionService
     };
 
     private readonly AppSettings _settings;
+    private readonly VocabularyStore? _vocabulary;
+    private readonly Func<string, string, CancellationToken, Task<WordDefinition>>? _fetch;
+    private readonly TimeSpan _timeout;
+    private readonly SemaphoreSlim _lookup = new(1, 1);
     private readonly ConcurrentDictionary<(string, string), WordDefinition> _cache = new();
     private AnthropicClient? _client;
 
-    public DefinitionService(AppSettings settings) => _settings = settings;
+    public DefinitionService(AppSettings settings, VocabularyStore? vocabulary = null,
+        Func<string, string, CancellationToken, Task<WordDefinition>>? fetch = null, TimeSpan? timeout = null)
+    {
+        _settings = settings;
+        _vocabulary = vocabulary;
+        _fetch = fetch;
+        _timeout = timeout ?? TimeSpan.FromSeconds(20);
+    }
 
     public bool HasApiKey => _settings.ResolveApiKey() is not null;
 
@@ -73,6 +95,8 @@ internal sealed class DefinitionService
             ApiKey = apiKey,
             AuthToken = null,
             BaseUrl = EnvironmentUrl.Production,
+            Timeout = TimeSpan.FromSeconds(15),
+            MaxRetries = 1,
         };
         if (httpClient is not null) options.HttpClient = httpClient;
         return new AnthropicClient(options);
@@ -104,8 +128,40 @@ internal sealed class DefinitionService
 
     public async Task<WordDefinition> DefineAsync(string phrase, string sentence, CancellationToken cancellationToken)
     {
-        if (_cache.TryGetValue((phrase, sentence), out var cached)) return cached;
+        phrase = VocabularyStore.Normalize(phrase);
+        sentence = VocabularyStore.Normalize(sentence);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_timeout);
+        try
+        {
+            await _lookup.WaitAsync(timeout.Token);
+            try
+            {
+                timeout.Token.ThrowIfCancellationRequested();
+                var definition = _vocabulary?.Find(phrase, sentence, _settings.Model);
+                if (definition is null && !_cache.TryGetValue((phrase, sentence), out definition))
+                {
+                    definition = _fetch is null
+                        ? await FetchAsync(phrase, sentence, timeout.Token)
+                        : await _fetch(phrase, sentence, timeout.Token).WaitAsync(timeout.Token);
+                    timeout.Token.ThrowIfCancellationRequested();
+                    definition.Validate();
+                    if (_cache.Count >= 500) _cache.Clear();
+                    _cache[(phrase, sentence)] = definition;
+                }
+                _vocabulary?.Record(phrase, sentence, _settings.Model, definition);
+                return definition;
+            }
+            finally { _lookup.Release(); }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("Le service met trop de temps à répondre. Réessayez dans un instant.");
+        }
+    }
 
+    private async Task<WordDefinition> FetchAsync(string phrase, string sentence, CancellationToken cancellationToken)
+    {
         var apiKey = _settings.ResolveApiKey()
             ?? throw new InvalidOperationException("Aucune clé API. Ajoutez-la dans les réglages d'InstructMe.");
         _client ??= CreateClient(apiKey);
@@ -130,8 +186,8 @@ internal sealed class DefinitionService
             throw new InvalidOperationException("Le modèle a refusé cette demande.");
 
         var json = string.Concat(response.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
-        var definition = WordDefinition.Parse(json);
-        _cache[(phrase, sentence)] = definition;
-        return definition;
+        return WordDefinition.Parse(json);
     }
+
+    public void Dispose() => _client?.Dispose();
 }

@@ -30,6 +30,12 @@ internal sealed class Pronouncer : IDisposable
 
     public bool IsAvailable => _neural is not null || _windows is not null;
 
+    public void Stop()
+    {
+        _current?.Cancel();
+        _player.Pause();
+    }
+
     public async Task SpeakAsync(string text)
     {
         text = text.Trim();
