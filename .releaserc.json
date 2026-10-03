@@ -9,16 +9,12 @@
       }
     ],
     ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
+    "@semantic-release/github",
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "dotnet publish src/InstructMe/InstructMe.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:Version=${nextRelease.version} -o artifacts"
-      }
-    ],
-    [
-      "@semantic-release/github",
-      {
-        "assets": [{ "path": "artifacts/InstructMe.exe", "label": "InstructMe.exe (Windows 10/11, x64)" }]
+        "prepareCmd": "pwsh -NoProfile -File scripts/pack.ps1 -Version ${nextRelease.version}",
+        "publishCmd": "pwsh -NoProfile -File scripts/upload.ps1 -Tag ${nextRelease.gitTag}"
       }
     ]
   ]

@@ -72,14 +72,16 @@ docs(readme): add the showreel
 
 ### 🚀 Your commit type sets the next version
 
-Releases are automatic. When a change lands on `main` and CI passes, [semantic-release](https://semantic-release.gitbook.io/) reads the new commits. It picks the version, builds `InstructMe.exe`, and publishes a [GitHub release](https://github.com/SofianeBel/InstructMe/releases) with notes.
+Releases are automatic. When a change lands on `main` and CI passes, [semantic-release](https://semantic-release.gitbook.io/) reads the new commits. It picks the version and publishes a [GitHub release](https://github.com/SofianeBel/InstructMe/releases) with notes. Then [Velopack](https://docs.velopack.io/) builds the installer and the update packages (`scripts/pack.ps1`) and adds them to the release (`scripts/upload.ps1`). Installed apps find their updates there.
+
+To test the installer on your machine: `pwsh scripts/pack.ps1 -Version 0.0.1 -NoDelta`. The files go to `artifacts/releases`.
 
 ```mermaid
 flowchart LR
     A["🔀 Merge to main"] --> B["✅ CI: build + test"]
     B --> C["🔎 Read commit types"]
     C --> D["🏷️ Tag vX.Y.Z"]
-    D --> E["📦 Release with .exe"]
+    D --> E["📦 Release with installer<br/>and update packages"]
 ```
 
 | Commit on `main` | Next version |

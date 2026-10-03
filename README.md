@@ -45,9 +45,9 @@ flowchart LR
 
 **You need:** Windows 10 (2004+) or 11 and a [Claude API key](https://console.anthropic.com/).
 
-1. ⬇️ **[Download InstructMe.exe](https://github.com/SofianeBel/InstructMe/releases/latest/download/InstructMe.exe)**. It is one file. You do not need to install .NET.
+1. ⬇️ **[Download the installer](https://github.com/SofianeBel/InstructMe/releases/latest/download/InstructMe-win-Setup.exe)** and open it. It installs in one click, for your Windows account only: no admin rights, no questions, and no .NET to install.
 
-   > 🛡️ The file is not code-signed. If Windows SmartScreen stops it, click **More info → Run anyway**.
+   > 🛡️ The installer is not code-signed. If Windows SmartScreen stops it, click **More info → Run anyway**.
 
 2. Give the app your API key (once):
 
@@ -55,13 +55,41 @@ flowchart LR
    setx ANTHROPIC_API_KEY "sk-ant-..."
    ```
 
-3. Start `InstructMe.exe`. An ℹ️ icon appears in the system tray.
+3. InstructMe starts by itself after the install, and then each time you sign in to Windows. An ℹ️ icon appears in the system tray. You can also find it in the Start menu and on the desktop.
 
 4. In your game, press **Ctrl + Alt + L**.
+
+> 🎒 **No install?** Take `InstructMe-win-Portable.zip` from the [latest release](https://github.com/SofianeBel/InstructMe/releases/latest), unzip it anywhere, and start `InstructMe.exe`.
 
 > 🧑‍💻 **From the source code:** install the [.NET 10 SDK](https://dotnet.microsoft.com/download), then run `dotnet run --project src/InstructMe`.
 
 > 💡 **Tip:** Play in **borderless window** mode. Exclusive fullscreen can minimize the game when the overlay opens.
+
+---
+
+## 🔄 Updates
+
+```mermaid
+flowchart LR
+    A["🚀 New release<br/>on GitHub"] --> B["⬇️ The app downloads it<br/>in the background"]
+    B --> C["🔔 Tray message:<br/>update ready"]
+    C --> D["🔁 Installed when you quit,<br/>or now from the tray menu"]
+```
+
+- The installed app looks for a new version 30 seconds after it starts, then every 6 hours. Only the changed files are downloaded.
+- To install it now, right-click the tray icon → **Installer la version … et redémarrer**. Otherwise, it installs when you quit InstructMe.
+- Your settings, API key, and vocabulary stay in `%APPDATA%\InstructMe`. Updates and uninstalls never touch this folder.
+- To uninstall: **Windows Settings → Apps → InstructMe → Uninstall**.
+
+### 📦 You have an old `InstructMe.exe` (before the installer)
+
+The old single-file version cannot update itself. Move to the installer once:
+
+1. Right-click the old tray icon → **Quitter**.
+2. Run the [installer](https://github.com/SofianeBel/InstructMe/releases/latest/download/InstructMe-win-Setup.exe).
+3. Delete the old `InstructMe.exe`.
+
+Your settings and vocabulary are kept: the new version reads the same folder. From now on, updates are automatic.
 
 ---
 
