@@ -111,6 +111,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
   "hotkey": "Ctrl+Alt+L",
   "model": "claude-haiku-4-5",
   "voice": "en-US-EmmaMultilingualNeural",
+  "launchAtStartup": true,
   "anthropicApiKey": null
 }
 ```
@@ -120,6 +121,7 @@ The first run creates `%APPDATA%\InstructMe\settings.json`. Right-click the tray
 | `hotkey` | Any `Ctrl` / `Alt` / `Shift` / `Win` + key, e.g. `Ctrl+Shift+F9`. Changes saved in the settings window apply immediately; restart after editing the file directly. |
 | `model` | Claude model for the definitions. Haiku is fast and cheap. |
 | `voice` | Free Microsoft neural voice, e.g. `en-US-AndrewMultilingualNeural` or `en-GB-SoniaNeural`. Empty `""` = Windows voices only. |
+| `launchAtStartup` | `true` (default) starts InstructMe in the tray when you sign in to Windows. Toggle it with **Lancer avec Windows** in the settings window. |
 | `anthropicApiKey` | The key entered in settings takes priority. If empty, the app uses `ANTHROPIC_API_KEY`. |
 
 Errors are written to `%APPDATA%\InstructMe\error.log`.

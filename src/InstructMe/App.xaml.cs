@@ -57,6 +57,7 @@ public partial class App : Application
         try
         {
             _settings = AppSettings.Load();
+            SyncWindowsStartup();
             _gesture = HotkeyGesture.Parse(_settings.Hotkey);
             _detector = TextDetector.Create();
             _vocabulary = new VocabularyStore();
@@ -152,9 +153,10 @@ public partial class App : Application
 
         try
         {
+            WindowsStartup.Apply(next.LaunchAtStartup);
             next.Save();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             newHotkey?.Dispose();
             return $"Enregistrement impossible : {ex.Message}";
@@ -180,6 +182,19 @@ public partial class App : Application
         _vocabularyWindow?.UpdateShortcut(gesture.Text);
         if (_tray is not null) _tray.Text = $"InstructMe · {gesture.Text}";
         return null;
+    }
+
+    /// <summary>Keeps the Run entry in line with the setting. A failure must not stop the app.</summary>
+    private void SyncWindowsStartup()
+    {
+        try
+        {
+            WindowsStartup.Apply(_settings.LaunchAtStartup);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex);
+        }
     }
 
     private async void OnHotkey()

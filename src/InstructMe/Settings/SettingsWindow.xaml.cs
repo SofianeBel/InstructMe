@@ -54,6 +54,7 @@ public partial class SettingsWindow : Window
     {
         _hotkey = settings.Hotkey;
         HotkeyBox.Text = settings.Hotkey;
+        LaunchAtStartupToggle.IsChecked = settings.LaunchAtStartup;
 
         Fill(ModelBox, Models, settings.Model);
 
@@ -82,6 +83,7 @@ public partial class SettingsWindow : Window
     {
         var next = _original.Clone();
         next.Hotkey = _hotkey;
+        next.LaunchAtStartup = LaunchAtStartupToggle.IsChecked == true;
         next.Model = SelectedId(ModelBox);
         next.Voice = NeuralVoiceToggle.IsChecked == true ? SelectedId(VoiceBox) : "";
         next.AnthropicApiKey = string.IsNullOrWhiteSpace(ApiKeyBox.Password) ? null : ApiKeyBox.Password.Trim();

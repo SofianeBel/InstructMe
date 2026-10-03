@@ -12,6 +12,9 @@ internal sealed class AppSettings
     /// <summary>Free Microsoft neural voice (online). Empty: use only the installed Windows voices.</summary>
     public string Voice { get; set; } = "en-US-EmmaMultilingualNeural";
 
+    /// <summary>Start the app when the user signs in to Windows.</summary>
+    public bool LaunchAtStartup { get; set; } = true;
+
     /// <summary>Optional. Takes priority over the ANTHROPIC_API_KEY environment variable.</summary>
     public string? AnthropicApiKey { get; set; }
 

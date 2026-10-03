@@ -329,10 +329,10 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
 
-                <!-- Shortcut -->
+                <!-- Shortcut and startup -->
                 <Border Style="{StaticResource Section}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Raccourci" />
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Général" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -346,6 +346,12 @@
                         </Grid>
                         <TextBlock x:Name="HotkeyHint" Style="{StaticResource Hint}" Margin="0,10,0,0"
                                    Text="Ouvre et ferme la lecture. Un Stream Deck peut envoyer le même raccourci." />
+                        <Border Style="{StaticResource Separator}" />
+                        <Grid>
+                            <TextBlock Style="{StaticResource Label}" Text="Lancer avec Windows" />
+                            <CheckBox x:Name="LaunchAtStartupToggle" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
+                                      ToolTip="InstructMe démarre en arrière-plan à l'ouverture de votre session." />
+                        </Grid>
                     </StackPanel>
                 </Border>
 
