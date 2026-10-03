@@ -14,7 +14,14 @@
     <RootNamespace>InstructMe</RootNamespace>
     <!-- WPF app: DPI awareness belongs in app.manifest, the WinForms-only warning does not apply. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <!-- Velopack must run first in Main, so the app has its own Main (see App.xaml.cs). -->
+    <StartupObject>InstructMe.App</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- WinForms and WPF both define these names; keep the WPF ones. -->
@@ -24,6 +31,8 @@
 
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.50.0" />
+    <!-- Keep the same version as the vpk tool in dotnet-tools.json. -->
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
   <ItemGroup>

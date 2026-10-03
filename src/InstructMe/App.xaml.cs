@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using InstructMe.Capture;
 using InstructMe.Definitions;
 using InstructMe.Input;
@@ -8,7 +9,9 @@ using InstructMe.Native;
 using InstructMe.Overlay;
 using InstructMe.Settings;
 using InstructMe.Text;
+using InstructMe.Updates;
 using InstructMe.Vocabulary;
+using Velopack;
 using Forms = System.Windows.Forms;
 
 namespace InstructMe;
@@ -32,6 +35,53 @@ public partial class App : Application
     private VocabularyStore? _vocabulary;
     private VocabularyWindow? _vocabularyWindow;
     private bool _opening;
+    private readonly AppUpdater _updater = new();
+    private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(30) };
+    private Forms.ToolStripMenuItem? _updateItem;
+    private string? _announcedVersion;
+    private bool _checkingUpdates;
+
+    [STAThread]
+    private static void Main()
+    {
+        // Velopack runs the app with special arguments during install, update, and uninstall.
+        // It must come first: for those runs it exits from inside Run().
+        VelopackApp.Build()
+            .OnBeforeUninstallFastCallback(_ =>
+            {
+                try { WindowsStartup.Apply(false); }
+                catch { /* The uninstall must go on. */ }
+                StopOtherInstances();
+            })
+            .Run();
+
+        var app = new App();
+        app.InitializeComponent();
+        app.Run();
+    }
+
+    /// <summary>
+    /// Velopack does not always find the app in the tray before an uninstall,
+    /// and a running copy keeps its folder locked.
+    /// </summary>
+    private static void StopOtherInstances()
+    {
+        foreach (var process in System.Diagnostics.Process.GetProcessesByName("InstructMe"))
+        {
+            using (process)
+            {
+                try
+                {
+                    if (process.Id == Environment.ProcessId
+                        || !string.Equals(process.MainModule?.FileName, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    process.Kill();
+                    process.WaitForExit(5000);
+                }
+                catch { /* Already closed, or not ours. */ }
+            }
+        }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -57,6 +107,7 @@ public partial class App : Application
         try
         {
             _settings = AppSettings.Load();
+            SyncWindowsStartup();
             _gesture = HotkeyGesture.Parse(_settings.Hotkey);
             _detector = TextDetector.Create();
             _vocabulary = new VocabularyStore();
@@ -65,6 +116,13 @@ public partial class App : Application
             _hotkey = new GlobalHotkey(_gesture);
             _hotkey.Pressed += OnHotkey;
             CreateTray();
+            // The first check waits a little: at sign-in, the network is often not ready yet.
+            _updateTimer.Tick += (_, _) =>
+            {
+                _updateTimer.Interval = TimeSpan.FromHours(6);
+                CheckForUpdates();
+            };
+            _updateTimer.Start();
             if (e.Args.Contains("--vocabulary", StringComparer.OrdinalIgnoreCase)) OpenVocabulary();
             else if (_definitions.HasApiKey is false) OpenSettings();
         }
@@ -78,9 +136,12 @@ public partial class App : Application
     private void CreateTray()
     {
         var menu = new Forms.ContextMenuStrip();
+        _updateItem = new Forms.ToolStripMenuItem { Visible = false };
+        _updateItem.Click += (_, _) => Quit(restartAfterUpdate: true);
+        menu.Items.Add(_updateItem);
         menu.Items.Add("Réglages", null, (_, _) => OpenSettings());
         menu.Items.Add("Mon vocabulaire", null, (_, _) => OpenVocabulary());
-        menu.Items.Add("Quitter", null, (_, _) => Shutdown());
+        menu.Items.Add("Quitter", null, (_, _) => Quit(restartAfterUpdate: false));
 
         _tray = new Forms.NotifyIcon
         {
@@ -152,9 +213,10 @@ public partial class App : Application
 
         try
         {
+            WindowsStartup.Apply(next.LaunchAtStartup);
             next.Save();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             newHotkey?.Dispose();
             return $"Enregistrement impossible : {ex.Message}";
@@ -180,6 +242,58 @@ public partial class App : Application
         _vocabularyWindow?.UpdateShortcut(gesture.Text);
         if (_tray is not null) _tray.Text = $"InstructMe · {gesture.Text}";
         return null;
+    }
+
+    private async void CheckForUpdates()
+    {
+        if (_checkingUpdates) return;
+        _checkingUpdates = true;
+        try
+        {
+            var version = await _updater.DownloadAsync();
+            if (version is null || version == _announcedVersion) return;
+            _announcedVersion = version;
+            _updateItem!.Text = $"Installer la version {version} et redémarrer";
+            _updateItem.Visible = true;
+            _tray?.ShowBalloonTip(5000, "InstructMe",
+                $"La version {version} est prête. Elle s'installera quand vous quitterez InstructMe.", Forms.ToolTipIcon.None);
+        }
+        catch (Exception ex)
+        {
+            // Offline or GitHub unavailable: try again at the next check.
+            LogError(ex);
+        }
+        finally
+        {
+            _checkingUpdates = false;
+        }
+    }
+
+    /// <summary>Quits the app. A downloaded version is installed first, then the app restarts if asked.</summary>
+    private void Quit(bool restartAfterUpdate)
+    {
+        try
+        {
+            _updater.InstallOnExit(restartAfterUpdate);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex);
+        }
+        Shutdown();
+    }
+
+    /// <summary>Keeps the Run entry in line with the setting. A failure must not stop the app.</summary>
+    private void SyncWindowsStartup()
+    {
+        try
+        {
+            WindowsStartup.Apply(_settings.LaunchAtStartup);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex);
+        }
     }
 
     private async void OnHotkey()
@@ -225,6 +339,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _updateTimer.Stop();
         _hotkey?.Dispose();
         _definitions?.Dispose();
         _pronouncer?.Dispose();
